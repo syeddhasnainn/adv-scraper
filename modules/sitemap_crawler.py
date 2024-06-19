@@ -33,6 +33,13 @@ class Crawler:
         self.crawl_id = generate(size=10)
         self.fetch = fetch
 
+    def get_headers(self):
+        hd = next(self.headers)
+        if 'Accept-Encoding' in hd:
+            hd.pop('Accept-Encoding')
+        return hd
+    
+
     def guess_robots_url(self, url):
         logging.info("Guessing robots.txt url")
         return urljoin(url, "/robots.txt")
@@ -49,7 +56,7 @@ class Crawler:
 
     def fetch_page(self, url):
         logging.info(f"Fetching {url}")
-        html = requests.get(url,headers=next(self.headers)).text
+        html = requests.get(url,headers=self.get_headers()).text
         result = {
             "crawl_id": self.crawl_id,
             "domain": self.domain,
@@ -67,9 +74,7 @@ class Crawler:
         else:
             url = self.sitemap
 
-        r = requests.get(url,headers=next(self.headers))
-        print(r.status_code)
-        print(r.text)
+        r = requests.get(url,headers=self.get_headers())
         root = etree.fromstring(r.content)
 
         for url in root.xpath("//*[local-name()='loc']/text()"):
@@ -103,8 +108,7 @@ class Crawler:
             logging.info(f"Skipping {url} due to robots.txt")
             return
 
-        r = requests.get(url,headers=next(self.headers))
-        print(r.text)
+        r = requests.get(url,headers=self.get_headers())
         root = etree.fromstring(r.content)
         for url in root.xpath("//*[local-name()='loc']/text()"):
             logging.info(f"Adding: {url}")
