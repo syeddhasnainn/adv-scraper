@@ -7,6 +7,13 @@ from time import time
 from nanoid import generate
 from bs4 import BeautifulSoup
 from fake_headers import Headers
+import datetime
+logging.basicConfig(filename=f'logs/{datetime.datetime.now().strftime('%Y%m%d%H')}',
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    datefmt='%H:%M:%S',
+                    level=logging.DEBUG)
+
 
 def getHeaders():
     header = Headers(
@@ -17,6 +24,7 @@ def getHeaders():
 
     while True:
         yield header.generate()
+
 
 class Crawler:
     def __init__(self, domain=None, sitemap=None, fetch=False):
@@ -32,6 +40,7 @@ class Crawler:
         self.crawl_delay = 0
         self.crawl_id = generate(size=10)
         self.fetch = fetch
+        self.session = requests.Session()
 
     def get_headers(self):
         hd = next(self.headers)
@@ -56,12 +65,12 @@ class Crawler:
 
     def fetch_page(self, url):
         logging.info(f"Fetching {url}")
-        html = requests.get(url,headers=self.get_headers()).text
+        # html = self.session.get(url,headers=self.get_headers()).text
         result = {
             "crawl_id": self.crawl_id,
             "domain": self.domain,
             "url": url,
-            "html": html,
+            # "html": html,
         }
         self.results.append(result)
         return result
@@ -74,7 +83,7 @@ class Crawler:
         else:
             url = self.sitemap
 
-        r = requests.get(url,headers=self.get_headers())
+        r = self.session.get(url,headers=self.get_headers())
         root = etree.fromstring(r.content)
 
         for url in root.xpath("//*[local-name()='loc']/text()"):
@@ -108,7 +117,7 @@ class Crawler:
             logging.info(f"Skipping {url} due to robots.txt")
             return
 
-        r = requests.get(url,headers=self.get_headers())
+        r = self.session.get(url,headers=self.get_headers())
         root = etree.fromstring(r.content)
         for url in root.xpath("//*[local-name()='loc']/text()"):
             logging.info(f"Adding: {url}")
