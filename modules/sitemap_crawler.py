@@ -6,10 +6,23 @@ import urllib.robotparser
 from time import time
 from nanoid import generate
 from bs4 import BeautifulSoup
+from fake_headers import Headers
 
+def getHeaders():
+    header = Headers(
+        browser="chrome",  # Generate only Chrome UA
+        os="win",  # Generate ony Windows platform
+        headers=True  # generate misc headers
+    )
+
+    while True:
+        yield header.generate()
 
 class Crawler:
     def __init__(self, domain=None, sitemap=None, fetch=False):
+        self.headers = getHeaders()
+
+        
         self.rp = urllib.robotparser.RobotFileParser()
         self.visited_urls = []
         self.urls_to_visit = []
@@ -36,7 +49,7 @@ class Crawler:
 
     def fetch_page(self, url):
         logging.info(f"Fetching {url}")
-        html = requests.get(url).text
+        html = requests.get(url,headers=next(self.headers)).text
         result = {
             "crawl_id": self.crawl_id,
             "domain": self.domain,
@@ -54,7 +67,9 @@ class Crawler:
         else:
             url = self.sitemap
 
-        r = requests.get(url)
+        r = requests.get(url,headers=next(self.headers))
+        print(r.status_code)
+        print(r.text)
         root = etree.fromstring(r.content)
 
         for url in root.xpath("//*[local-name()='loc']/text()"):
@@ -88,7 +103,8 @@ class Crawler:
             logging.info(f"Skipping {url} due to robots.txt")
             return
 
-        r = requests.get(url)
+        r = requests.get(url,headers=next(self.headers))
+        print(r.text)
         root = etree.fromstring(r.content)
         for url in root.xpath("//*[local-name()='loc']/text()"):
             logging.info(f"Adding: {url}")

@@ -3,10 +3,13 @@ import scraper_helper
 import pandas as pd
 from scrapy import Selector
 import regex as re
+from modules.sitemap_crawler import Crawler
 
+def Websitecrawler(link):
+    crawl = Crawler(domain=link,fetch=True)
+    urls = crawl.run()
+    return urls
 
-def crawler():
-    pass
 
 
 def scraper():
@@ -20,3 +23,6 @@ def emailRegex(response):
     return re.findall(pattern, response)
 
 
+
+urls = Websitecrawler('https://mentign.com/')
+print(urls)
